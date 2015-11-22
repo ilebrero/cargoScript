@@ -22,12 +22,12 @@ def retrieveFileFromUrl(url, fileNameContent):
 	PDFFile = urllib2.urlopen(fileLink)
 	print "File has been downloaded"
 	
-	return PDFFile
+	return PDFFile.read()
 
 def dumpDataToFile(data, fileName):
 	print "Creating file"
 
-	f = open('pagecontent/' + fileName, 'w')
+	f = open(fileName, 'w')
 	f.write( str(data) )
 	f.close()
 
@@ -68,7 +68,7 @@ def saveFile(items, file):
 def deleteFile(fileName):
 	print "Cleaning"
 
-	os.remove('pagecontent/' + fileName)
+	os.remove(fileName)
 
 	print "Done cleaning"
 
@@ -79,25 +79,40 @@ def removeNonAscii(i):
 		if ord(j) < 128 : result = result + j 
 	return result
 
+def obtenerActa(numero):
+	switcher = {
+		"1" : "1",
+		"2" : "2",
+		"3" : "3",
+		"4" : "IV",
+		"5" : "V",
+	}
 
-#MAIN#--------------------------------------
-data = retrieveFileFromUrl("https://sites.google.com/site/informaciondocente/remanente-de-actos-publicos", 'Junta%20V')
+	return switcher.get(numero, "nada")
 
-#saves it into a file
-dumpDataToFile(data, "actaV.pdf")
+def main(actaNumero, keyWord):
+	acta = obtenerActa(actaNumero)
 
-#now reads it and modifies it
-items = retrieveFromPdf("pagecontent/acto.pdf", "MECANICA")
+	data = retrieveFileFromUrl("https://sites.google.com/site/informaciondocente/remanente-de-actos-publicos", 'Junta%20' + acta)
 
-#clear files
-deleteFile("actaV.pdf")
+	#saves it into a file
+	dumpDataToFile(data, 'acta' + acta + '.pdf')
 
-#TODO: revisar como no poner explicitamente usuario y contrasena
-#sendFileContent("CargosComputacion.txt", "cargos computacion", "from", "me@algo.com")
+	#now reads it and modifies it
+	items = retrieveFromPdf('acta' + acta + '.pdf', keyWord)
 
-if(items == []):
-	subprocess.Popen(['notify-send', "no hay cargos nuevos"])	
-else:
-	#notifies the OS about the new messages
-	subprocess.Popen(['notify-send', "tenes cargos nuevos :)"])
-	saveFile(items, "CargosComputacion.txt")
+	#clear files
+	deleteFile('acta' + acta + '.pdf')
+
+	#TODO: revisar como no poner explicitamente usuario y contrasena
+	#sendFileContent("CargosComputacion.txt", "cargos computacion", "from", "me@algo.com")
+
+	if(items == []):
+		subprocess.Popen(['notify-send', "no hay cargos nuevos"])	
+	else:
+		#notifies the OS about the new messages
+		subprocess.Popen(['notify-send', "tenes cargos nuevos :)"])
+		saveFile(items, "CargosComputacion.txt")
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1], sys.argv[2]))
