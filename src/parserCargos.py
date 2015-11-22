@@ -1,8 +1,9 @@
-import os
 import sys
-import subprocess
-import pdfquery
+import mail
 import urllib2
+import pdfquery
+import subprocess
+import FileManager
 import MyHTMLparser
 
 def retrieveFileFromUrl(url, fileNameContent):
@@ -24,95 +25,59 @@ def retrieveFileFromUrl(url, fileNameContent):
 	
 	return PDFFile.read()
 
-def dumpDataToFile(data, fileName):
-	print "Creating file"
-
-	f = open(fileName, 'w')
-	f.write( str(data) )
-	f.close()
-
-	print "File has been created"
-	
-	return
-
 def retrieveFromPdf(fileName, category):
 	print "Opening PDF"
 
 	pdf = pdfquery.PDFQuery(fileName)
 	pdf.load()
 	
-	print "PDF succesfully opened"
-
-	print "Doing magic in the file"
+	print "PDF succesfully opened", "Doing magic in the file"
+	
 	#gives format and recovers data
 	label = pdf.pq('LTTextLineHorizontal:contains(' + category + ')')
-
 	items = []
 	
 	for i in label.items('LTTextLineHorizontal'):
 		left_corner   = float(i.attr('x0'))
 		bottom_corner = float(i.attr('y0'))
+
 		items.append(pdf.pq('LTTextLineHorizontal:in_bbox("%s, %s, %s, %s")' % (left_corner-800, bottom_corner, left_corner+700, bottom_corner+20)).text())
 	
 	return items
 
-def saveFile(items, file):
-	f = open(file,'w')
-
-	for i in items:
-		f.write(removeNonAscii(i) + '\n')
-	f.close()
-	
-	return
-
-def deleteFile(fileName):
-	print "Cleaning"
-
-	os.remove(fileName)
-
-	print "Done cleaning"
-
-def removeNonAscii(i):
-	result = ""
-	
-	for j in i:
-		if ord(j) < 128 : result = result + j 
-	return result
-
 def obtenerActa(numero):
 	switcher = {
-		"1" : "1",
-		"2" : "2",
-		"3" : "3",
 		"4" : "IV",
 		"5" : "V",
 	}
 
-	return switcher.get(numero, "nada")
+	return switcher.get(numero, numero)
 
-def main(actaNumero, keyWord):
+def main(actaNumero, keyWord, mail_enabled, to):
 	acta = obtenerActa(actaNumero)
 
 	data = retrieveFileFromUrl("https://sites.google.com/site/informaciondocente/remanente-de-actos-publicos", 'Junta%20' + acta)
 
 	#saves it into a file
-	dumpDataToFile(data, 'acta' + acta + '.pdf')
+	FileManager.savePlainTextToFile(data, 'acta' + acta + '.pdf')
 
 	#now reads it and modifies it
 	items = retrieveFromPdf('acta' + acta + '.pdf', keyWord)
 
 	#clear files
-	deleteFile('acta' + acta + '.pdf')
+	FileManager.deleteFile('acta' + acta + '.pdf')
 
-	#TODO: revisar como no poner explicitamente usuario y contrasena
-	#sendFileContent("CargosComputacion.txt", "cargos computacion", "from", "me@algo.com")
-
-	if(items == []):
+	if (items == []) :
 		subprocess.Popen(['notify-send', "no hay cargos nuevos"])	
 	else:
 		#notifies the OS about the new messages
 		subprocess.Popen(['notify-send', "tenes cargos nuevos :)"])
-		saveFile(items, "CargosComputacion.txt")
+		
+		if (mail_enabled != 'no_mail'):
+			#TODO: revisar como no poner explicitamente usuario y contrasena
+			mail.sendFileContent(items, 'Cargos ' + keyWord, to)
+		
+		FileManager.saveItemsOnFile(items, "CargosComputacion.txt")
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1], sys.argv[2]))
+    sys.exit(main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]))
