@@ -77,7 +77,7 @@ def main(actaNumero, keyWord, mail_enabled, to):
 			#TODO: revisar como no poner explicitamente usuario y contrasena
 			mail.sendFileContent(items, 'Cargos ' + keyWord, to)
 		
-		FileManager.saveItemsOnFile(items, "CargosComputacion.txt")
+		#FileManager.saveItemsOnFile(items, "CargosComputacion.txt")
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]))

@@ -1,0 +1,5 @@
+Mejorar los datos levantados del PDF
+
+Mejorar el formato de los datos a enviar por mail.
+
+Ver como guardar de forma segura el usuario y contraseña para no pedirlo a futuro.
